@@ -2,9 +2,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -29,16 +29,24 @@ import java.util.concurrent.TimeoutException;
  */
 public class InFlightRequests implements Closeable {
     private final static long TIMEOUT_SEC = 10L;
+
     private final Semaphore semaphore = new Semaphore(10);
+
     private final Map<Integer, ResponseFuture> futureMap = new ConcurrentHashMap<>();
+
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+
     private final ScheduledFuture scheduledFuture;
+
+    /**
+     * 支持超时时间
+     */
     public InFlightRequests() {
         scheduledFuture = scheduledExecutorService.scheduleAtFixedRate(this::removeTimeoutFutures, TIMEOUT_SEC, TIMEOUT_SEC, TimeUnit.SECONDS);
     }
 
     public void put(ResponseFuture responseFuture) throws InterruptedException, TimeoutException {
-        if(semaphore.tryAcquire(TIMEOUT_SEC, TimeUnit.SECONDS)) {
+        if (semaphore.tryAcquire(TIMEOUT_SEC, TimeUnit.SECONDS)) {
             futureMap.put(responseFuture.getRequestId(), responseFuture);
         } else {
             throw new TimeoutException();
@@ -47,7 +55,7 @@ public class InFlightRequests implements Closeable {
 
     private void removeTimeoutFutures() {
         futureMap.entrySet().removeIf(entry -> {
-            if( System.nanoTime() - entry.getValue().getTimestamp() > TIMEOUT_SEC * 1000000000L) {
+            if (System.nanoTime() - entry.getValue().getTimestamp() > TIMEOUT_SEC * 1000000000L) {
                 semaphore.release();
                 return true;
             } else {
@@ -58,7 +66,7 @@ public class InFlightRequests implements Closeable {
 
     public ResponseFuture remove(int requestId) {
         ResponseFuture future = futureMap.remove(requestId);
-        if(null != future) {
+        if (null != future) {
             semaphore.release();
         }
         return future;

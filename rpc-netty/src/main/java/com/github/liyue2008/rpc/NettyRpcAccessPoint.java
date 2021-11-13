@@ -20,6 +20,8 @@ import com.github.liyue2008.rpc.transport.RequestHandlerRegistry;
 import com.github.liyue2008.rpc.transport.Transport;
 import com.github.liyue2008.rpc.transport.TransportClient;
 import com.github.liyue2008.rpc.transport.TransportServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.net.InetSocketAddress;
@@ -49,14 +51,27 @@ public class NettyRpcAccessPoint implements RpcAccessPoint {
 
     private final ServiceProviderRegistry serviceProviderRegistry = ServiceSupport.load(ServiceProviderRegistry.class);
 
+    public static final Logger log = LoggerFactory.getLogger(RpcAccessPoint.class);
+
+    /**
+     * 一个url建立一个通道[IP,PORT]
+     *
+     * @param uri          远程服务地址
+     * @param serviceClass 服务的接口类的Class
+     * @param <T>
+     * @return
+     */
     @Override
     public <T> T getRemoteService(URI uri, Class<T> serviceClass) {
+        log.info("uri={},serviceClass={}", uri, serviceClass);
         Transport transport = clientMap.computeIfAbsent(uri, this::createTransport);
+        log.info("链接对象已创建");
         return stubFactory.createStub(transport, serviceClass);
     }
 
     private Transport createTransport(URI uri) {
         try {
+            log.info("发起和远端的链接,uri={}", uri.toString());
             return client.createTransport(new InetSocketAddress(uri.getHost(), uri.getPort()), 30000L);
         } catch (InterruptedException | TimeoutException e) {
             throw new RuntimeException(e);

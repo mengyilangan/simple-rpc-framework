@@ -13,6 +13,7 @@
  */
 package com.github.liyue2008.rpc.transport.netty;
 
+import com.github.liyue2008.rpc.NettyRpcAccessPoint;
 import com.github.liyue2008.rpc.transport.InFlightRequests;
 import com.github.liyue2008.rpc.transport.Transport;
 import com.github.liyue2008.rpc.transport.TransportClient;
@@ -29,6 +30,7 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import org.slf4j.Logger;
 
 import java.net.SocketAddress;
 import java.util.LinkedList;
@@ -52,7 +54,10 @@ public class NettyClient implements TransportClient {
         inFlightRequests = new InFlightRequests();
     }
 
+    private static final Logger log = NettyRpcAccessPoint.log;
+
     private Bootstrap newBootstrap(ChannelHandler channelHandler, EventLoopGroup ioEventGroup) {
+        //server端启动
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.channel(Epoll.isAvailable() ? EpollSocketChannel.class : NioSocketChannel.class)
             .group(ioEventGroup)
@@ -63,6 +68,7 @@ public class NettyClient implements TransportClient {
 
     @Override
     public Transport createTransport(SocketAddress address, long connectionTimeout) throws InterruptedException, TimeoutException {
+        log.info("发起和远端的链接,address={},requests={}", address, inFlightRequests);
         return new NettyTransport(createChannel(address, connectionTimeout), inFlightRequests);
     }
 

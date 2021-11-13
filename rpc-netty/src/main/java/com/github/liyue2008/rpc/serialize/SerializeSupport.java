@@ -54,7 +54,8 @@ public class SerializeSupport {
             throw new SerializeException("Type mismatch!");
         }
     }
-    public static  <E> E parse(byte [] buffer) {
+
+    public static <E> E parse(byte[] buffer) {
         return parse(buffer, 0, buffer.length);
     }
 
